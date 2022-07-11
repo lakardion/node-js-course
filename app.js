@@ -6,6 +6,9 @@ const path = require("path");
 const { rootDir } = require("./helpers/rootDir");
 
 const app = express();
+// compile dynamic content
+app.set("view engine", "pug");
+app.set("views", "views");
 app.use(bodyParser.urlencoded());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/admin", adminRoutes);
