@@ -14,8 +14,9 @@ exports.postAddProduct = (req, res, next) => {
   const price = req.body.price;
   const description = req.body.description;
   const product = new Product(null, title, imageUrl, description, price);
-  product.save();
-  res.redirect('/');
+  product.save().then(
+    res.redirect('/')
+  ).catch(console.error);
 };
 
 exports.getEditProduct = (req, res, next) => {
@@ -24,7 +25,7 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect('/');
   }
   const prodId = req.params.productId;
-  Product.findById(prodId, product => {
+  Product.findById(prodId).then(([[product], fieldData]) => {
     if (!product) {
       return res.redirect('/');
     }
