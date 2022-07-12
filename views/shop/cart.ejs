@@ -3,4 +3,42 @@
 
     <body>
         <%- include('../includes/navigation.ejs') %>
-        <%- include('../includes/end.ejs') %>
+            <main>
+                <% if (cart.products.length> 0) { %>
+                    <div class="grid">
+                        <% for (let product of cart.products) { %>
+                            <article class="card product-item">
+                                <header class="card__header">
+                                    <h1 class="product__title">
+                                        <%= product.title %>
+                                    </h1>
+                                </header>
+                                <div class="card__image">
+                                    <img src="<%= product.imageUrl %>" alt="<%= product.title %>">
+                                </div>
+                                <div class="card__content">
+                                    <h2 class="product__price">$<%= product.price %>
+                                    </h2>
+                                    <p class="product__description">
+                                        <%= product.description %>
+                                    </p>
+                                </div>
+                                <div class="card__actions">
+                                    <form action="/cart/update-qty" method="post">
+                                        <input type="number" value="<%= product.qty %>">
+                                        <input type="hidden" name="productId" value="<%= product.id %>" />
+                                        <button class="btn" type="submit">Update qty</button>
+                                    </form>
+                                    <form action="/cart/remove-from-cart" method="post">
+                                        <button class="btn" type="submit">Remove from cart</button>
+                                        <input type="hidden" name="productId" value="<%= product.id %>" />
+                                    </form>
+                                </div>
+                            </article>
+                            <% } %>
+                    </div>
+                    <% } else { %>
+                        <h1>No Products Found!</h1>
+                        <% } %>
+            </main>
+            <%- include('../includes/end.ejs') %>

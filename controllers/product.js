@@ -1,4 +1,4 @@
-const Product = require('../models/product')
+const { Product, ProductRepository } = require('../models/product')
 
 exports.getAddProduct = (req, res, next) => {
   res.render('add-product', {
@@ -17,7 +17,7 @@ exports.postAddProduct = (req, res, next) => {
 }
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll((products) => {
+  ProductRepository.fetchAll((products) => {
     res.render('shop', {
       prods: products,
       pageTitle: 'Shop',
