@@ -1,65 +1,74 @@
-const fs = require('fs')
-const path = require('path')
-// Each product in cart will have: product,quantity
+const fs = require('fs');
+const path = require('path');
+
 const p = path.join(
-  path.dirname(require.main.filename),
+  path.dirname(process.mainModule.filename),
   'data',
   'cart.json'
-)
+);
 
-module.exports = class CartRepository {
-  static save (cart) {
-    fs.writeFile(p, JSON.stringify(cart), (err) => {
-      if (err) console.error(err)
-    })
-  }
-
-  static addToCart (id, productPrice) {
-    const price = parseFloat(productPrice)
+module.exports = class Cart {
+  static addProduct(id, productPrice) {
+    // Fetch the previous cart
     fs.readFile(p, (err, fileContent) => {
+      let cart = { products: [], totalPrice: 0 };
       if (!err) {
-        let newCart
-        const dbCart = JSON.parse(fileContent)
-        const totalPrice = parseFloat(dbCart.totalPrice)
-        const existingIdx = dbCart.products.findIndex(prodItem => prodItem.id === id)
-        if (existingIdx === -1) {
-          const newCartProducts = [...dbCart.products, { id, qty: 1, price }]
-          const newPrice = totalPrice + price
-          newCart = { products: newCartProducts, totalPrice: newPrice }
-        } else {
-          const cartProductsCopy = [...dbCart.products]
-          const existingProduct = dbCart.products[existingIdx]
-          const updatedProduct = { ...existingProduct, qty: existingProduct.qty + 1 }
-          cartProductsCopy[existingIdx] = updatedProduct
-          newCart = { products: cartProductsCopy, totalPrice: totalPrice + price }
-        }
-        this.save(newCart)
-        return
+        cart = JSON.parse(fileContent);
       }
-      console.error(err)
-      const newCart = { products: [{ id, price, qty: 1 }], totalPrice: price }
-      this.save(newCart)
-    })
-  }
-
-  static removeFromCart (productId, onResolve) {
-    this.getCart((cart) => {
-      const copy = [...cart.products]
-      const foundIdx = cart.products.findIndex(p => p.id === productId)
-      if (foundIdx === -1) return
-      const [removed] = copy.splice(foundIdx, 1)
-      fs.writeFile(p, JSON.stringify({ products: copy, totalPrice: cart.totalPrice - (removed.price * removed.qty) }), console.error)
-      onResolve()
-    })
-  }
-
-  static getCart (onResolve) {
-    fs.readFile(p, (err, fileContent) => {
-      if (!err) {
-        onResolve(JSON.parse(fileContent))
+      // Analyze the cart => Find existing product
+      const existingProductIndex = cart.products.findIndex(
+        prod => prod.id === id
+      );
+      const existingProduct = cart.products[existingProductIndex];
+      let updatedProduct;
+      // Add new product/ increase quantity
+      if (existingProduct) {
+        updatedProduct = { ...existingProduct };
+        updatedProduct.qty = updatedProduct.qty + 1;
+        cart.products = [...cart.products];
+        cart.products[existingProductIndex] = updatedProduct;
       } else {
-        onResolve([])
+        updatedProduct = { id: id, qty: 1 };
+        cart.products = [...cart.products, updatedProduct];
       }
-    })
+      cart.totalPrice = cart.totalPrice + +productPrice;
+      fs.writeFile(p, JSON.stringify(cart), err => {
+        console.log(err);
+      });
+    });
   }
-}
+
+  static deleteProduct(id, productPrice) {
+    fs.readFile(p, (err, fileContent) => {
+      if (err) {
+        return;
+      }
+      const updatedCart = { ...JSON.parse(fileContent) };
+      const product = updatedCart.products.find(prod => prod.id === id);
+      if (!product) {
+          return;
+      }
+      const productQty = product.qty;
+      updatedCart.products = updatedCart.products.filter(
+        prod => prod.id !== id
+      );
+      updatedCart.totalPrice =
+        updatedCart.totalPrice - productPrice * productQty;
+
+      fs.writeFile(p, JSON.stringify(updatedCart), err => {
+        console.log(err);
+      });
+    });
+  }
+
+  static getCart(cb) {
+    fs.readFile(p, (err, fileContent) => {
+      const cart = JSON.parse(fileContent);
+      if (err) {
+        cb(null);
+      } else {
+        cb(cart);
+      }
+    });
+  }
+};
