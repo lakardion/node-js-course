@@ -1,13 +1,14 @@
 const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose')
 
 const errorController = require('./controllers/error');
-const { mongoConnect } = require('./util/database');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
-const { UserRepository, User } = require('./models/user');
+// const { UserRepository, User } = require('./models/user');
+const User = require('./models/user')
 
 const app = express();
 
@@ -16,9 +17,8 @@ app.set('views', 'views');
 
 
 app.use(async (req, res, next) => {
-  const user = await UserRepository.findById('62cee713aa257c93061e2cbb')
-  const { email, name, cart, _id } = user
-  req.user = new User({ name, email, cart, _id })
+  const user = await User.findById('62cf2e73908c74bdae5f86d6')
+  req.user = user
   next()
 })
 
@@ -32,7 +32,7 @@ app.use(errorController.get404);
 
 ; (async () => {
   try {
-    await mongoConnect()
+    await mongoose.connect('mongodb+srv://root:mongodb@cluster0.5zaox.mongodb.net/shop?retryWrites=true&w=majority')
     // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
     app.listen(3000)
   } catch (connetionError) {

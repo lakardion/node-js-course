@@ -1,9 +1,8 @@
-const { OrderRepository } = require('../models/order');
-const { ProductRepository } = require('../models/product');
-const { User } = require('../models/user');
+const Product = require('../models/product')
+const Order = require('../models/order')
 
 exports.getProducts = async (req, res, next) => {
-  const products = await ProductRepository.fetchAll()
+  const products = await Product.find()
   res.render('shop/product-list', {
     prods: products,
     pageTitle: 'All Products',
@@ -13,7 +12,7 @@ exports.getProducts = async (req, res, next) => {
 
 exports.getProduct = async (req, res, next) => {
   const prodId = req.params.productId;
-  const product = await ProductRepository.findById(prodId)
+  const product = await Product.findById(prodId)
   res.render('shop/product-detail', {
     product: product,
     pageTitle: product.title,
@@ -22,7 +21,7 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getIndex = async (req, res, next) => {
-  const products = await ProductRepository.fetchAll()
+  const products = await Product.find()
   res.render('shop/index', {
     prods: products,
     pageTitle: 'Shop',
@@ -31,18 +30,18 @@ exports.getIndex = async (req, res, next) => {
 };
 
 exports.getCart = async (req, res, next) => {
-  const products = await req.user.getCart()
+  const user = await req.user.populate('cart.items.productId')
   res.render('shop/cart', {
     path: '/cart',
     pageTitle: 'Your Cart',
-    products
+    products: user.cart.items
   });
 };
 
 exports.postCart = async (req, res, next) => {
   const prodId = req.body.productId;
-  // I fear this is super prone to get outdated pretty easily
-  await req.user.addToCart(prodId)
+  const product = await Product.findById(prodId)
+  await req.user.addToCart(product)
   return res.redirect('/cart')
 };
 
@@ -53,12 +52,33 @@ exports.postCartDeleteProduct = async (req, res, next) => {
 };
 
 exports.postOrder = async (req, res, next) => {
-  await req.user.addOrder()
+  const products = (await req.user.populate('cart.items.productId')).cart.items
+  const order = new Order({
+    user: {
+      name: req.user.name,
+      userId: req.user._id
+    },
+    products: products.map(i => ({
+      //in here we could also do { ...i.product.id._doc } which is a special field that mongoose provides so that we can get all the metadata of the reference of that document. However in my case I chose to do a population sf that information whenever the order gets fetched
+      productData: i.productId,
+      quantity: i.quantity
+    }))
+  })
+  await order.save()
+  //we can also create a custom function for the user schema that executes this, I just liked this way which is a two-liner and it's the only place where we're using it right now
+  req.user.cart.items = []
+  await req.user.save()
   return res.redirect('/orders')
 }
 
 exports.getOrders = async (req, res, next) => {
-  const orders = await req.user.getOrders()
+  const orders = await Order.find({ 'user.userId': req.user._id }).populate({
+    path: 'products',
+    populate: {
+      path: 'productData',
+      model: 'Product'
+    }
+  })
   res.render('shop/orders', {
     path: '/orders',
     pageTitle: 'Your Orders',
