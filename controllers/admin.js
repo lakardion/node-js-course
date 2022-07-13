@@ -1,4 +1,4 @@
-const Product = require('../models/product');
+const { Product, ProductRepository } = require('../models/product');
 
 exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
@@ -13,15 +13,9 @@ exports.postAddProduct = async (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  try {
-    await req.user.createProduct({ description, imageUrl, price, imageUrl, title })
-    console.log('Product created!');
-    res.redirect(
-      '/'
-    )
-  } catch (err) {
-    console.error(err)
-  }
+  const product = new Product({ title, price, description, imageUrl, userId: req.user._id })
+  await product.save()
+  res.redirect('/admin/products')
 };
 
 exports.getEditProduct = async (req, res, next) => {
@@ -30,7 +24,7 @@ exports.getEditProduct = async (req, res, next) => {
     return res.redirect('/');
   }
   const prodId = req.params.productId;
-  const product = await Product.findByPk(prodId)
+  const product = await ProductRepository.findById(prodId)
   if (!product) {
     return res.redirect('/');
   }
@@ -44,11 +38,9 @@ exports.getEditProduct = async (req, res, next) => {
 
 exports.postEditProduct = async (req, res, next) => {
   const { productId: id, title, price, imageUrl, description } = req.body
-  const product = await Product.findByPk(id)
-  product.title = title;
-  product.price = price
-  product.imageUrl = imageUrl
-  product.description = description
+  const product = new Product({
+    title, price, imageUrl, description, userId: req.user._id, _id: id
+  })
   await product.save()
   res.redirect('/admin/products');
   //? alternative with `where` clause
@@ -61,7 +53,7 @@ exports.postEditProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.findAll()
+  const products = await ProductRepository.fetchAll()
   res.render('admin/products', {
     prods: products,
     pageTitle: 'Admin Products',
@@ -71,17 +63,16 @@ exports.getProducts = async (req, res, next) => {
 
 exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  const product = await Product.findByPk(prodId)
-  await product.destroy()
+  await ProductRepository.deleteById(prodId)
   res.redirect('/admin/products')
+}
 
-  //? alternative: this is if you want to use `where` clause
-  // Product.destroy({
-  //   where: {
-  //     id: prodId
-  //   }
-  // }).then(destroyedCount => {
-  //   console.log('destroyed', destroyedCount)
-  //   res.redirect('/admin/products')
-  // }).catch(console.error)
-};
+//   //? alternative: this is if you want to use `where` clause
+//   // Product.destroy({
+//   //   where: {
+//   //     id: prodId
+//   //   }
+//   // }).then(destroyedCount => {
+//   //   res.redirect('/admin/products')
+//   // }).catch(console.error)
+// };
