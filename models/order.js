@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 const orderSchema = new Schema({
   user: {
-    name: {
+    email: {
       type: String,
       required: true,
     },

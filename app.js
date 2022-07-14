@@ -6,6 +6,7 @@ const session = require('express-session')
 const MongoDBStore = require('connect-mongodb-session')(session)
 const MONGO_DB_CONNSTRING = "mongodb+srv://root:mongodb@cluster0.5zaox.mongodb.net/shop?retryWrites=true&w=majority"
 const csrf = require('csurf')
+const flash = require('connect-flash')
 
 const store = new MongoDBStore({
   uri: MONGO_DB_CONNSTRING,
@@ -30,11 +31,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(session({ secret: 'mysecret', resave: false, saveUninitialized: false, store }))
 app.use(csrfProtection)
+app.use(flash())
 
 app.use(async (req, res, next) => {
   if (!req.session.user) return next()
   const user = await User.findById(req.session.user._id)
   req.user = user;
+  next()
+})
+
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken()
   next()
 })
 
