@@ -1,88 +1,88 @@
-const Product = require('../models/product')
-const Order = require('../models/order')
+const Product = require("../models/product");
+const Order = require("../models/order");
 
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.find()
-  res.render('shop/product-list', {
+  const products = await Product.find();
+  res.render("shop/product-list", {
     prods: products,
-    pageTitle: 'All Products',
-    path: '/products'
+    pageTitle: "All Products",
+    path: "/products",
   });
 };
 
 exports.getProduct = async (req, res, next) => {
   const prodId = req.params.productId;
-  const product = await Product.findById(prodId)
-  res.render('shop/product-detail', {
+  const product = await Product.findById(prodId);
+  res.render("shop/product-detail", {
     product: product,
     pageTitle: product.title,
-    path: '/products'
+    path: "/products",
   });
 };
 
 exports.getIndex = async (req, res, next) => {
-  const products = await Product.find()
-  res.render('shop/index', {
+  const products = await Product.find();
+  res.render("shop/index", {
     prods: products,
-    pageTitle: 'Shop',
-    path: '/'
+    pageTitle: "Shop",
+    path: "/",
   });
 };
 
 exports.getCart = async (req, res, next) => {
-  const user = await req.user.populate('cart.items.productId')
-  res.render('shop/cart', {
-    path: '/cart',
-    pageTitle: 'Your Cart',
-    products: user.cart.items
+  const user = await req.user.populate("cart.items.productId");
+  res.render("shop/cart", {
+    path: "/cart",
+    pageTitle: "Your Cart",
+    products: user.cart.items,
   });
 };
 
 exports.postCart = async (req, res, next) => {
   const prodId = req.body.productId;
-  const product = await Product.findById(prodId)
-  await req.user.addToCart(product)
-  return res.redirect('/cart')
+  const product = await Product.findById(prodId);
+  await req.user.addToCart(product);
+  return res.redirect("/cart");
 };
 
 exports.postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  await req.user.removeFromCart(prodId)
-  return res.redirect('/cart')
+  await req.user.removeFromCart(prodId);
+  return res.redirect("/cart");
 };
 
 exports.postOrder = async (req, res, next) => {
-  const products = (await req.user.populate('cart.items.productId')).cart.items
+  const products = (await req.user.populate("cart.items.productId")).cart.items;
   const order = new Order({
     user: {
       name: req.user.name,
-      userId: req.user._id
+      userId: req.user._id,
     },
-    products: products.map(i => ({
+    products: products.map((i) => ({
       //in here we could also do { ...i.product.id._doc } which is a special field that mongoose provides so that we can get all the metadata of the reference of that document. However in my case I chose to do a population sf that information whenever the order gets fetched
       productData: i.productId,
-      quantity: i.quantity
-    }))
-  })
-  await order.save()
+      quantity: i.quantity,
+    })),
+  });
+  await order.save();
   //we can also create a custom function for the user schema that executes this, I just liked this way which is a two-liner and it's the only place where we're using it right now
-  req.user.cart.items = []
-  await req.user.save()
-  return res.redirect('/orders')
-}
+  req.user.cart.items = [];
+  await req.user.save();
+  return res.redirect("/orders");
+};
 
 exports.getOrders = async (req, res, next) => {
-  const orders = await Order.find({ 'user.userId': req.user._id }).populate({
-    path: 'products',
+  const orders = await Order.find({ "user.userId": req.user._id }).populate({
+    path: "products",
     populate: {
-      path: 'productData',
-      model: 'Product'
-    }
-  })
-  res.render('shop/orders', {
-    path: '/orders',
-    pageTitle: 'Your Orders',
-    orders
+      path: "productData",
+      model: "Product",
+    },
+  });
+  res.render("shop/orders", {
+    path: "/orders",
+    pageTitle: "Your Orders",
+    orders,
   });
 };
 

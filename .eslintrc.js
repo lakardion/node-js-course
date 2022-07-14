@@ -2,15 +2,12 @@ module.exports = {
   env: {
     browser: true,
     commonjs: true,
-    es2021: true
+    es2021: true,
+    node: true,
   },
-  extends: [
-    'standard'
-  ],
+  extends: ["standard", "prettier"],
   parserOptions: {
-    ecmaVersion: 'latest'
+    ecmaVersion: "latest",
   },
-  rules: {
-  },
-  ignorePatterns: ['**/*.ejs']
-}
+  rules: {},
+};

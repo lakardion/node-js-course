@@ -12,7 +12,11 @@ const userSchema = new Schema({
   cart: {
     items: [
       {
-        productId: { type: Schema.Types.ObjectId, required: true, ref: 'Product' },
+        productId: {
+          type: Schema.Types.ObjectId,
+          required: true,
+          ref: "Product",
+        },
         quantity: { type: Number, required: true },
       },
     ],
@@ -20,25 +24,27 @@ const userSchema = new Schema({
 });
 
 userSchema.methods.addToCart = function (product) {
-  const existingIdx = this.cart.items.findIndex(p => p.productId.toString() === product._id.toString())
+  const existingIdx = this.cart.items.findIndex(
+    (p) => p.productId.toString() === product._id.toString()
+  );
   if (existingIdx !== -1) {
-    const existing = this.cart.items[existingIdx]
-    existing.quantity += 1
+    const existing = this.cart.items[existingIdx];
+    existing.quantity += 1;
+  } else {
+    this.cart.items.push({ productId: product._id, quantity: 1 });
   }
-  else {
-    this.cart.items.push({ productId: product._id, quantity: 1 })
-  }
-  return this.save()
-}
+  return this.save();
+};
 
 userSchema.methods.removeFromCart = function (productId) {
   //? I did this becuase is quite confusing whether the id is an object id or a string
-  this.cart.items = this.cart.items.filter(ci => ci.productId.toString() !== productId.toString())
-  this.save()
-}
+  this.cart.items = this.cart.items.filter(
+    (ci) => ci.productId.toString() !== productId.toString()
+  );
+  this.save();
+};
 
-
-module.exports = model('User', userSchema)
+module.exports = model("User", userSchema);
 // const { ObjectId } = require("mongodb")
 // const { getDb } = require("../util/database")
 // const { ProductRepository } = require("./product")
