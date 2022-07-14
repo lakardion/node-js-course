@@ -1,15 +1,16 @@
+require('dotenv').config()
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require('express-session')
 const MongoDBStore = require('connect-mongodb-session')(session)
-const MONGO_DB_CONNSTRING = "mongodb+srv://root:mongodb@cluster0.5zaox.mongodb.net/shop?retryWrites=true&w=majority"
+const { MONGO_DB_URI } = process.env
 const csrf = require('csurf')
 const flash = require('connect-flash')
 
 const store = new MongoDBStore({
-  uri: MONGO_DB_CONNSTRING,
+  uri: MONGO_DB_URI,
   collection: 'sessions'
 })
 
@@ -56,7 +57,7 @@ app.use(errorController.get404);
 (async () => {
   try {
     await mongoose.connect(
-      MONGO_DB_CONNSTRING
+      MONGO_DB_URI
     );
     // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
     app.listen(3000);
