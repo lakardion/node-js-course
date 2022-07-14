@@ -242,10 +242,15 @@ form {
   padding: 1rem;
 }
 
-user-message--error {
+.user-message--error {
   border-color: red;
   background: rgb(255, 176, 176);
   color: red;
+}
+.user-message--success {
+  border-color: green;
+  background: #42b174;
+  color: white;
 }
 
 @media (min-width: 768px) {

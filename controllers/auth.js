@@ -1,24 +1,27 @@
 const User = require('../models/user')
 const bcrypt = require('bcryptjs')
-// const nodemailer = require('nodemailer')
-// const sendgridTransport = require('nodemailer-sendgrid-transport')
+const nodemailer = require('nodemailer')
+const sendgridTransport = require('nodemailer-sendgrid-transport')
+const crypto = require('crypto')
 
 
-// const transporter = nodemailer.createTransport(sendgridTransport({
-//   auth: {
-//     // ! use apikey from sendgrid here
-//     api_key: ''
-//   }
-// }))
+const transporter = nodemailer.createTransport(sendgridTransport({
+  auth: {
+    api_key: process.env.SENDGRID_API_KEY
+  }
+}))
 
 exports.getLogin = (req, res, next) => {
-  const [message] = req.flash('error')
+  const [errorMessage] = req.flash('error')
+  const [successMessage] = req.flash('success')
+
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
     isAuthenticated: req.session.isLoggedIn,
     csrfToken: req.csrfToken(),
-    errorMessage: message
+    errorMessage,
+    successMessage
   });
 };
 
@@ -54,12 +57,14 @@ exports.postLogout = async (req, res, next) => {
 
 exports.getSignup = (req, res, next) => {
   const [errorMessage] = req.flash('error')
+  const [successMessage] = req.flash('success')
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
     isAuthenticated: false,
     csrfToken: req.csrfToken(),
-    errorMessage
+    errorMessage,
+    successMessage
   });
 }
 
@@ -74,17 +79,93 @@ exports.postSignup = async (req, res, next) => {
   }
   const newUser = new User({ email, password: hashedPsw, cart: { items: [] } })
   await newUser.save()
-  return res.redirect('/')
-  // try {
-  //   return await transporter.sendMail({
-  //     to: email,
-  //     // ! use some email, I'm not hardcoding mine
-  //     from: '',
-  //     subject: 'Signup succeeded',
-  //     html: '<h1> Welcome! </h1> <p> Your signup was completed successfully, we look forward to receiving your first order! </p>'
-  //   })
+  res.redirect('/')
+  try {
+    return await transporter.sendMail({
+      to: email,
+      from: process.env.SENDGRID_EMAIL,
+      subject: 'Signup succeeded',
+      html: '<h1> Welcome! </h1> <p> Your signup was completed successfully, we look forward to receiving your first order! </p>'
+    })
 
-  // } catch (sendgridError) {
-  //   console.log({ sendgridError })
-  // }
+  } catch (sendgridError) {
+    console.log({ sendgridError })
+  }
 };
+
+exports.getReset = async (req, res, next) => {
+  const { token } = req.query
+  const [errorMessage] = req.flash('error')
+  const [successMessage] = req.flash('success')
+  if (token) {
+    const user = await User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
+    if (!user) {
+      req.flash('error', 'Invalid token')
+      return res.redirect('/reset')
+    }
+    return res.render('auth/reset-password', {
+      path: '/reset-password', pageTitle: 'Reset password', errorMessage, userId: user._id, successMessage
+    })
+  }
+  res.render(
+    'auth/reset', {
+    path: '/reset', pageTitle: 'Reset password', errorMessage, successMessage
+  }
+  )
+}
+exports.postReset = (req, res, next) => {
+  crypto.randomBytes(32, async (cryptoError, buffer) => {
+    if (cryptoError) {
+      console.error({ cryptoError })
+      return res.redirect('/reset')
+    }
+    const token = buffer.toString('hex')
+    try {
+      const user = await User.findOne({ email: req.body.email })
+      if (!user) {
+        req.flash('error', 'No account with that email found')
+        return res.redirect('/reset')
+      }
+      user.resetToken = token;
+      const ONE_HOUR_MS = 60 * 60 * 1000
+      user.resetTokenExpiration = Date.now() + ONE_HOUR_MS
+      await user.save()
+      res.redirect('/')
+      return transporter.sendMail({
+        to: user.email,
+        from: process.env.SENDGRID_EMAIL,
+        subject: 'Reset password',
+        html: `
+          <p> You requested a password reset </p>
+          <p> Click this <a href="${process.env.BASE_URL}/reset?token=${token}">link</a> to reset your password. Or ignore this email if this was not you </p>
+        `
+      })
+
+    } catch (userError) {
+      console.error(userError)
+      req.flash('error', 'There has been an error while resetting password')
+      return res.redirect('/reset')
+    }
+  })
+}
+exports.postResetPassword = async (req, res, next) => {
+  const { password
+    // , confirmPassword
+    , userId } = req.body
+  // todo: validate
+  try {
+    // ! in the course Max does check again for the token expiration here... I did not add this since I did not pass around the token adn token expiration, but definitely could have done it as well
+    const user = await User.findOne({ _id: userId })
+    user.password = await bcrypt.hash(password, 12)
+    await user.save()
+    user.resetToken = null;
+    user.resetTokenExpiration = null;
+    await user.save()
+    req.flash('success', 'Password reset successfully, login again with your new credentials')
+    res.redirect('/login')
+  } catch (userError) {
+    console.error({ userError })
+    req.flash('error', 'There was an error resetting the password')
+    res.redirect('/reset')
+  }
+}

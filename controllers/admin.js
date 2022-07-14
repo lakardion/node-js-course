@@ -50,23 +50,19 @@ exports.getEditProduct = async (req, res, next) => {
 exports.postEditProduct = async (req, res, next) => {
   const { productId: id, title, price, imageUrl, description } = req.body;
   const product = await Product.findById(id);
+  if (product.userId.toString() !== req.user._id.toString()) {
+    return res.redirect('/')
+  }
   product.title = title;
   product.price = price;
   product.imageUrl = imageUrl;
   product.description = description;
   await product.save();
   res.redirect("/admin/products");
-  // ? alternative with `where` clause
-  // Product.update({ title, price, imageUrl, description }, {
-  //   where: {
-  //     id
-  //   }
-  // }).then(updatedIds => {
-  // }).catch(console.error)
 };
 
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.find();
+  const products = await Product.find({ userId: req.user._id });
   // .select('title price -_id')
   // we could use select to only get certain data, this by specifying the fields space separated in a string
   // .populate('userId')
@@ -82,6 +78,6 @@ exports.getProducts = async (req, res, next) => {
 
 exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  await Product.findByIdAndRemove(prodId);
+  await Product.deleteOne({ _id: prodId, userId: req.user._id });
   res.redirect("/admin/products");
 };
