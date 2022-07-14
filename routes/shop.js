@@ -1,24 +1,26 @@
 const express = require("express");
 
 const shopController = require("../controllers/shop");
+const isAuth = require("../middleware/is-auth");
 
-const router = express.Router();
+const unauthedRouter = express.Router();
+const authedRouter = express.Router()
 
-router.get("/", shopController.getIndex);
+// unauth routes
+unauthedRouter.get("/", shopController.getIndex);
+unauthedRouter.get("/products", shopController.getProducts);
+unauthedRouter.get("/products/:productId", shopController.getProduct);
+exports.shopUnauthedRouter = unauthedRouter;
 
-router.get("/products", shopController.getProducts);
-
-router.get("/products/:productId", shopController.getProduct);
-
-router.get("/cart", shopController.getCart);
-
-router.post("/cart", shopController.postCart);
-
-router.post("/cart-delete-item", shopController.postCartDeleteProduct);
-
-router.post("/create-order", shopController.postOrder);
-router.get("/orders", shopController.getOrders);
+// auth routes
+authedRouter.use(isAuth)
+authedRouter.get("/cart", shopController.getCart);
+authedRouter.post("/cart", shopController.postCart);
+authedRouter.post("/cart-delete-item", shopController.postCartDeleteProduct);
+authedRouter.post("/create-order", shopController.postOrder);
+authedRouter.get("/orders", shopController.getOrders);
 
 // router.get('/checkout', shopController.getCheckout);
+exports.shopAuthedRouter = authedRouter
 
-module.exports = router;
+

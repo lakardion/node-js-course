@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const session = require('express-session')
 const MongoDBStore = require('connect-mongodb-session')(session)
 const MONGO_DB_CONNSTRING = "mongodb+srv://root:mongodb@cluster0.5zaox.mongodb.net/shop?retryWrites=true&w=majority"
+const csrf = require('csurf')
 
 const store = new MongoDBStore({
   uri: MONGO_DB_CONNSTRING,
@@ -19,11 +20,16 @@ const authRoutes = require("./routes/auth");
 const User = require('./models/user')
 
 const app = express();
+const csrfProtection = csrf()
 
 app.set("view engine", "ejs");
 app.set("views", "views");
 
+// ! super important the order of these 4 down here. csurf requires body parser to be able to get the _csrf value out of the hidden input, as well as the session set already so that it can use that as well..
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(session({ secret: 'mysecret', resave: false, saveUninitialized: false, store }))
+app.use(csrfProtection)
 
 app.use(async (req, res, next) => {
   if (!req.session.user) return next()
@@ -32,12 +38,10 @@ app.use(async (req, res, next) => {
   next()
 })
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "public")));
-
-app.use("/admin", adminRoutes);
-app.use(shopRoutes);
 app.use(authRoutes);
+app.use("/admin", adminRoutes);
+app.use(shopRoutes.shopUnauthedRouter)
+app.use(shopRoutes.shopAuthedRouter);
 
 app.use(errorController.get404);
 

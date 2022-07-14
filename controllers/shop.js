@@ -7,7 +7,8 @@ exports.getProducts = async (req, res, next) => {
     prods: products,
     pageTitle: "All Products",
     path: "/products",
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
+    csrfToken: req.csrfToken()
   });
 };
 
@@ -18,17 +19,20 @@ exports.getProduct = async (req, res, next) => {
     product,
     pageTitle: product.title,
     path: "/products",
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
+    csrfToken: req.csrfToken()
   });
 };
 
 exports.getIndex = async (req, res, next) => {
   const products = await Product.find();
+  console.log({ csrfToken: req.csrfToken() })
   res.render("shop/index", {
     prods: products,
     pageTitle: "Shop",
     path: "/",
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
+    csrfToken: req.csrfToken()
   });
 };
 
@@ -38,7 +42,8 @@ exports.getCart = async (req, res, next) => {
     path: "/cart",
     pageTitle: "Your Cart",
     products: user.cart.items,
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
+    csrfToken: req.csrfToken()
   });
 };
 
@@ -87,7 +92,8 @@ exports.getOrders = async (req, res, next) => {
     path: "/orders",
     pageTitle: "Your Orders",
     orders,
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
+    csrfToken: req.csrfToken()
   });
 };
 
