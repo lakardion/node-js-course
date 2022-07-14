@@ -37,7 +37,7 @@ userSchema.methods.addToCart = function (product) {
 };
 
 userSchema.methods.removeFromCart = function (productId) {
-  //? I did this becuase is quite confusing whether the id is an object id or a string
+  // ? I did this becuase is quite confusing whether the id is an object id or a string
   this.cart.items = this.cart.items.filter(
     (ci) => ci.productId.toString() !== productId.toString()
   );

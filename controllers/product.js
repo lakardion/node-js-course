@@ -1,4 +1,3 @@
-const { Product, ProductRepository } = require("../models/product");
 
 exports.getAddProduct = (req, res, next) => {
   res.render("add-product", {
@@ -7,6 +6,7 @@ exports.getAddProduct = (req, res, next) => {
     formsCSS: true,
     productCSS: true,
     activeAddProduct: true,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -15,16 +15,3 @@ exports.getAddProduct = (req, res, next) => {
 //   product.save()
 //   res.redirect('/')
 // }
-
-exports.getProducts = (req, res, next) => {
-  ProductRepository.fetchAll((products) => {
-    res.render("shop", {
-      prods: products,
-      pageTitle: "Shop",
-      path: "/",
-      hasProducts: products.length > 0,
-      activeShop: true,
-      productCSS: true,
-    });
-  });
-};

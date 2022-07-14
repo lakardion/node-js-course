@@ -5,6 +5,7 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -39,7 +40,8 @@ exports.getEditProduct = async (req, res, next) => {
     pageTitle: "Edit Product",
     path: "/admin/edit-product",
     editing: editMode,
-    product: product,
+    product,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -52,7 +54,7 @@ exports.postEditProduct = async (req, res, next) => {
   product.description = description;
   await product.save();
   res.redirect("/admin/products");
-  //? alternative with `where` clause
+  // ? alternative with `where` clause
   // Product.update({ title, price, imageUrl, description }, {
   //   where: {
   //     id
@@ -66,11 +68,12 @@ exports.getProducts = async (req, res, next) => {
   // .select('title price -_id')
   // we could use select to only get certain data, this by specifying the fields space separated in a string
   // .populate('userId')
-  //we could use populate to get embedded documentts
+  // we could use populate to get embedded documentts
   res.render("admin/products", {
     prods: products,
     pageTitle: "Admin Products",
     path: "/admin/products",
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -79,13 +82,3 @@ exports.postDeleteProduct = async (req, res, next) => {
   await Product.findByIdAndRemove(prodId);
   res.redirect("/admin/products");
 };
-
-//   //? alternative: this is if you want to use `where` clause
-//   // Product.destroy({
-//   //   where: {
-//   //     id: prodId
-//   //   }
-//   // }).then(destroyedCount => {
-//   //   res.redirect('/admin/products')
-//   // }).catch(console.error)
-// };

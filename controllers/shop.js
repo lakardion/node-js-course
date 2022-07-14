@@ -7,6 +7,7 @@ exports.getProducts = async (req, res, next) => {
     prods: products,
     pageTitle: "All Products",
     path: "/products",
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -14,9 +15,10 @@ exports.getProduct = async (req, res, next) => {
   const prodId = req.params.productId;
   const product = await Product.findById(prodId);
   res.render("shop/product-detail", {
-    product: product,
+    product,
     pageTitle: product.title,
     path: "/products",
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -26,6 +28,7 @@ exports.getIndex = async (req, res, next) => {
     prods: products,
     pageTitle: "Shop",
     path: "/",
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -35,6 +38,7 @@ exports.getCart = async (req, res, next) => {
     path: "/cart",
     pageTitle: "Your Cart",
     products: user.cart.items,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -59,13 +63,13 @@ exports.postOrder = async (req, res, next) => {
       userId: req.user._id,
     },
     products: products.map((i) => ({
-      //in here we could also do { ...i.product.id._doc } which is a special field that mongoose provides so that we can get all the metadata of the reference of that document. However in my case I chose to do a population sf that information whenever the order gets fetched
+      // in here we could also do { ...i.product.id._doc } which is a special field that mongoose provides so that we can get all the metadata of the reference of that document. However in my case I chose to do a population sf that information whenever the order gets fetched
       productData: i.productId,
       quantity: i.quantity,
     })),
   });
   await order.save();
-  //we can also create a custom function for the user schema that executes this, I just liked this way which is a two-liner and it's the only place where we're using it right now
+  // we can also create a custom function for the user schema that executes this, I just liked this way which is a two-liner and it's the only place where we're using it right now
   req.user.cart.items = [];
   await req.user.save();
   return res.redirect("/orders");
@@ -83,6 +87,7 @@ exports.getOrders = async (req, res, next) => {
     path: "/orders",
     pageTitle: "Your Orders",
     orders,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
