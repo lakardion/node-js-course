@@ -48,9 +48,16 @@ app.use(flash())
 
 app.use(async (req, res, next) => {
   if (!req.session.user) return next()
-  const user = await User.findById(req.session.user._id)
-  req.user = user;
-  next()
+  try {
+    const user = await User.findById(req.session.user._id)
+    if (user) req.user = user;
+    next()
+  }
+  catch (findUserError) {
+    const error = new Error('Error trying to get user information')
+    error.httpStatusCode = 500;
+    next(error)
+  }
 })
 
 app.use((req, res, next) => {
@@ -65,18 +72,24 @@ app.use(shopUnauthedRouter)
 app.use(shopAuthedRouter);
 
 app.use(errorController.get404);
+app.get('/500', errorController.get500)
 
-(async () => {
-  try {
-    await mongoose.connect(
-      MONGO_DB_URI
-    );
-    log('green', 'DB connected')
-    log('blue', 'Starting app...')
-    // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
-    app.listen(process.env.PORT);
-    log('green', `App started in port ${process.env.PORT}`)
-  } catch (connectionError) {
-    log('red', { connectionError })
-  }
-})();
+app.use((error, req, res, next) => {
+  if (error) return res.redirect('/500')
+  next()
+})
+
+  (async () => {
+    try {
+      await mongoose.connect(
+        MONGO_DB_URI
+      );
+      log('green', 'DB connected')
+      log('blue', 'Starting app...')
+      // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
+      app.listen(process.env.PORT);
+      log('green', `App started in port ${process.env.PORT}`)
+    } catch (connectionError) {
+      log('red', { connectionError })
+    }
+  })();

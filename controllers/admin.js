@@ -37,16 +37,30 @@ export const postAddProduct = async (req, res, next) => {
     }
     )
   }
-  const product = new Product({
-    title,
-    price,
-    description,
-    imageUrl,
-    userId: req.user,
-    // userId: req.user._id
-  });
-  await product.save();
-  res.redirect("/admin/products");
+  try {
+    const product = new Product({
+      title,
+      price,
+      description,
+      imageUrl,
+      userId: req.user,
+      // userId: req.user._id
+    });
+    await product.save();
+    res.redirect("/admin/products");
+  } catch (productSaveError) {
+    console.error({ productSaveError })
+    return res.status(500).render(
+      "admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      oldData: { title, imageUrl, price, description },
+      errorMessage: 'Database operation failed. Please try again later',
+      validationErrors: [],
+      successMessage: ''
+    })
+  }
 };
 
 export const getEditProduct = async (req, res, next) => {
