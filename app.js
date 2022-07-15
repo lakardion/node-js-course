@@ -1,25 +1,37 @@
-require('dotenv').config()
-const path = require("path");
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const session = require('express-session')
-const MongoDBStore = require('connect-mongodb-session')(session)
+import dotenv from 'dotenv'
+import path from 'path'
+import express from 'express'
+import bodyParser from 'body-parser'
+import mongoose from 'mongoose'
+import session from 'express-session'
+import MongoDBStoreSession from 'connect-mongodb-session'
+import csrf from 'csurf'
+import flash from 'connect-flash'
+import chalk from 'chalk'
+import { fileURLToPath } from 'url'
+
+import { errorController } from './controllers/index.js'
+import { adminRouter, shopAuthedRouter, shopUnauthedRouter, authRouter } from './routes/index.js'
+import { User } from './models/index.js'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config()
+const MongoDBStore = MongoDBStoreSession(session)
+
 const { MONGO_DB_URI } = process.env
-const csrf = require('csurf')
-const flash = require('connect-flash')
+const log = (color, message) => {
+  if (typeof (message) === 'function') throw new Error('functions are not supported as message')
+  const parsedMessage = typeof (message) === 'object' ? JSON.stringify(message, undefined, 2) : message
+  return console.log(chalk[color](parsedMessage));
+}
 
 const store = new MongoDBStore({
   uri: MONGO_DB_URI,
   collection: 'sessions'
 })
 
-const errorController = require("./controllers/error");
-
-const adminRoutes = require("./routes/admin");
-const shopRoutes = require("./routes/shop");
-const authRoutes = require("./routes/auth");
-const User = require('./models/user')
 
 const app = express();
 const csrfProtection = csrf()
@@ -47,10 +59,10 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use(authRoutes);
-app.use("/admin", adminRoutes);
-app.use(shopRoutes.shopUnauthedRouter)
-app.use(shopRoutes.shopAuthedRouter);
+app.use(authRouter);
+app.use("/admin", adminRouter);
+app.use(shopUnauthedRouter)
+app.use(shopAuthedRouter);
 
 app.use(errorController.get404);
 
@@ -59,9 +71,12 @@ app.use(errorController.get404);
     await mongoose.connect(
       MONGO_DB_URI
     );
+    log('green', 'DB connected')
+    log('blue', 'Starting app...')
     // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
-    app.listen(3000);
+    app.listen(process.env.PORT);
+    log('green', `App started in port ${process.env.PORT}`)
   } catch (connectionError) {
-    console.error({ connectionError });
+    log('red', { connectionError })
   }
 })();

@@ -1,6 +1,6 @@
-const Product = require("../models/product");
+import { Product } from '../models/index.js'
 
-exports.getAddProduct = (req, res, next) => {
+export const getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
@@ -10,7 +10,7 @@ exports.getAddProduct = (req, res, next) => {
   });
 };
 
-exports.postAddProduct = async (req, res, next) => {
+export const postAddProduct = async (req, res, next) => {
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
@@ -27,7 +27,7 @@ exports.postAddProduct = async (req, res, next) => {
   res.redirect("/admin/products");
 };
 
-exports.getEditProduct = async (req, res, next) => {
+export const getEditProduct = async (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
     return res.redirect("/");
@@ -47,7 +47,7 @@ exports.getEditProduct = async (req, res, next) => {
   });
 };
 
-exports.postEditProduct = async (req, res, next) => {
+export const postEditProduct = async (req, res, next) => {
   const { productId: id, title, price, imageUrl, description } = req.body;
   const product = await Product.findById(id);
   if (product.userId.toString() !== req.user._id.toString()) {
@@ -61,7 +61,7 @@ exports.postEditProduct = async (req, res, next) => {
   res.redirect("/admin/products");
 };
 
-exports.getProducts = async (req, res, next) => {
+export const getProducts = async (req, res, next) => {
   const products = await Product.find({ userId: req.user._id });
   // .select('title price -_id')
   // we could use select to only get certain data, this by specifying the fields space separated in a string
@@ -76,7 +76,7 @@ exports.getProducts = async (req, res, next) => {
   });
 };
 
-exports.postDeleteProduct = async (req, res, next) => {
+export const postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   await Product.deleteOne({ _id: prodId, userId: req.user._id });
   res.redirect("/admin/products");

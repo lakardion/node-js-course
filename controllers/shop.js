@@ -1,7 +1,6 @@
-const Product = require("../models/product");
-const Order = require("../models/order");
+import { Product, Order } from "../models/index.js";
 
-exports.getProducts = async (req, res, next) => {
+export const getProducts = async (req, res, next) => {
   const products = await Product.find();
   res.render("shop/product-list", {
     prods: products,
@@ -12,7 +11,7 @@ exports.getProducts = async (req, res, next) => {
   });
 };
 
-exports.getProduct = async (req, res, next) => {
+export const getProduct = async (req, res, next) => {
   const prodId = req.params.productId;
   const product = await Product.findById(prodId);
   res.render("shop/product-detail", {
@@ -24,7 +23,7 @@ exports.getProduct = async (req, res, next) => {
   });
 };
 
-exports.getIndex = async (req, res, next) => {
+export const getIndex = async (req, res, next) => {
   const products = await Product.find();
   res.render("shop/index", {
     prods: products,
@@ -35,7 +34,7 @@ exports.getIndex = async (req, res, next) => {
   });
 };
 
-exports.getCart = async (req, res, next) => {
+export const getCart = async (req, res, next) => {
   const user = await req.user.populate("cart.items.productId");
   res.render("shop/cart", {
     path: "/cart",
@@ -46,20 +45,20 @@ exports.getCart = async (req, res, next) => {
   });
 };
 
-exports.postCart = async (req, res, next) => {
+export const postCart = async (req, res, next) => {
   const prodId = req.body.productId;
   const product = await Product.findById(prodId);
   await req.user.addToCart(product);
   return res.redirect("/cart");
 };
 
-exports.postCartDeleteProduct = async (req, res, next) => {
+export const postCartDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   await req.user.removeFromCart(prodId);
   return res.redirect("/cart");
 };
 
-exports.postOrder = async (req, res, next) => {
+export const postOrder = async (req, res, next) => {
   const products = (await req.user.populate("cart.items.productId")).cart.items;
   const order = new Order({
     user: {
@@ -79,7 +78,7 @@ exports.postOrder = async (req, res, next) => {
   return res.redirect("/orders");
 };
 
-exports.getOrders = async (req, res, next) => {
+export const getOrders = async (req, res, next) => {
   const orders = await Order.find({ "user.userId": req.user._id }).populate({
     path: "products",
     populate: {
@@ -95,10 +94,3 @@ exports.getOrders = async (req, res, next) => {
     csrfToken: req.csrfToken()
   });
 };
-
-// exports.getCheckout = (req, res, next) => {
-//   res.render('shop/checkout', {
-//     path: '/checkout',
-//     pageTitle: 'Checkout'
-//   });
-// };

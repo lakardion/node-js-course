@@ -1,4 +1,6 @@
-const { Schema, model } = require("mongoose");
+import mongoose from "mongoose";
+
+const { Schema, model } = mongoose
 
 const productSchema = new Schema({
   title: {
@@ -24,7 +26,7 @@ const productSchema = new Schema({
   },
 });
 
-module.exports = model("Product", productSchema);
+export const Product = model("Product", productSchema);
 
 // const { ObjectId } = require("mongodb");
 // const { getDb } = require("../util/database");

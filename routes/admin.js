@@ -1,7 +1,7 @@
-const express = require("express");
+import express from 'express'
 
-const adminController = require("../controllers/admin");
-const isAuth = require("../middleware/is-auth");
+import { adminController } from '../controllers/index.js'
+import { isAuth } from '../middleware/is-auth.js'
 
 const router = express.Router();
 
@@ -22,4 +22,4 @@ router.post("/edit-product", adminController.postEditProduct);
 
 router.post("/delete-product", adminController.postDeleteProduct);
 
-module.exports = router;
+export { router as adminRouter }

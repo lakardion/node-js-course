@@ -1,8 +1,9 @@
-const User = require('../models/user')
-const bcrypt = require('bcryptjs')
-const nodemailer = require('nodemailer')
-const sendgridTransport = require('nodemailer-sendgrid-transport')
-const crypto = require('crypto')
+import bcrypt from 'bcryptjs'
+import nodemailer from 'nodemailer'
+import sendgridTransport from 'nodemailer-sendgrid-transport'
+import crypto from 'crypto'
+
+import { User } from '../models/index.js'
 
 
 const transporter = nodemailer.createTransport(sendgridTransport({
@@ -11,7 +12,7 @@ const transporter = nodemailer.createTransport(sendgridTransport({
   }
 }))
 
-exports.getLogin = (req, res, next) => {
+export const getLogin = (req, res, next) => {
   const [errorMessage] = req.flash('error')
   const [successMessage] = req.flash('success')
 
@@ -26,7 +27,7 @@ exports.getLogin = (req, res, next) => {
 };
 
 
-exports.postLogin = async (req, res, next) => {
+export const postLogin = async (req, res, next) => {
   // this adds a session cookie to our client connect.sid
   const { email, password } = req.body
   const foundUser = await User.findOne({ email })
@@ -48,27 +49,25 @@ exports.postLogin = async (req, res, next) => {
   // With sessions we don't have to worry about the request being discarded, we can 
 };
 
-exports.postLogout = async (req, res, next) => {
+export const postLogout = async (req, res, next) => {
   req.session.destroy((err) => {
     if (err) console.error(err)
     res.redirect('/')
   })
 }
 
-exports.getSignup = (req, res, next) => {
+export const getSignup = (req, res, next) => {
   const [errorMessage] = req.flash('error')
   const [successMessage] = req.flash('success')
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
-    isAuthenticated: false,
-    csrfToken: req.csrfToken(),
     errorMessage,
     successMessage
   });
 }
 
-exports.postSignup = async (req, res, next) => {
+export const postSignup = async (req, res, next) => {
   const { email, password } = req.body
   // todo: validation
   const hashedPsw = await bcrypt.hash(password, 12)
@@ -93,7 +92,7 @@ exports.postSignup = async (req, res, next) => {
   }
 };
 
-exports.getReset = async (req, res, next) => {
+export const getReset = async (req, res, next) => {
   const { token } = req.query
   const [errorMessage] = req.flash('error')
   const [successMessage] = req.flash('success')
@@ -113,7 +112,7 @@ exports.getReset = async (req, res, next) => {
   }
   )
 }
-exports.postReset = (req, res, next) => {
+export const postReset = (req, res, next) => {
   crypto.randomBytes(32, async (cryptoError, buffer) => {
     if (cryptoError) {
       console.error({ cryptoError })
@@ -148,7 +147,7 @@ exports.postReset = (req, res, next) => {
     }
   })
 }
-exports.postResetPassword = async (req, res, next) => {
+export const postResetPassword = async (req, res, next) => {
   const { password
     // , confirmPassword
     , userId } = req.body

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "ESNext",
+    "allowJs": true,
+    "checkJs": false,
+    "moduleResolution": "classic",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  }
+}
