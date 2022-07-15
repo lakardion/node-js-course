@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 import sendgridTransport from 'nodemailer-sendgrid-transport'
 import crypto from 'crypto'
+import { validationResult } from 'express-validator'
 
 import { User } from '../models/index.js'
 
@@ -12,6 +13,7 @@ const transporter = nodemailer.createTransport(sendgridTransport({
   }
 }))
 
+
 export const getLogin = (req, res, next) => {
   const [errorMessage] = req.flash('error')
   const [successMessage] = req.flash('success')
@@ -19,21 +21,47 @@ export const getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken(),
     errorMessage,
-    successMessage
+    successMessage,
+    oldInput: undefined,
+    validationErrors: []
   });
 };
 
 
 export const postLogin = async (req, res, next) => {
-  // this adds a session cookie to our client connect.sid
-  const { email, password } = req.body
+  const { email, password, confirmPassword } = req.body
+  // ! if we move this to validation the flow would become quite jumpy, since we'd have to use the request object to pass around information, whereas if we leave this validation here we would have everything clearer 
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: errors.array().reduce((result, err, idx, arr) => {
+        if (idx === 0) result += 'Error with the following fields: '
+        result += `${err.param} (${err.msg})`
+        if (idx !== arr.length - 1) result += ', '
+        return result
+      }, ''),
+      successMessage: '',
+      oldInput: {
+        email, password, confirmPassword
+      },
+      validationErrors: errors.array()
+    })
+  }
   const foundUser = await User.findOne({ email })
   if (!foundUser) {
-    req.flash('error', 'Invalid credentials')
-    return res.redirect('/login')
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: 'Invalid credentials',
+      successMessage: '',
+      oldInput: {
+        email, password, confirmPassword
+      }
+      , validationErrors: []
+    })
   }
   const passwordIsCorrect = await bcrypt.compare(password, foundUser.password)
   if (passwordIsCorrect) {
@@ -44,9 +72,16 @@ export const postLogin = async (req, res, next) => {
       res.redirect("/");
     })
   }
-  req.flash('error', 'Invalid credentials')
-  return res.redirect('/login')
-  // With sessions we don't have to worry about the request being discarded, we can 
+  return res.status(422).render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    errorMessage: 'Invalid credentials',
+    successMessage: '',
+    oldInput: {
+      email, password, confirmPassword
+    }
+    , validationErrors: []
+  })
 };
 
 export const postLogout = async (req, res, next) => {
@@ -63,19 +98,31 @@ export const getSignup = (req, res, next) => {
     path: '/signup',
     pageTitle: 'Signup',
     errorMessage,
-    successMessage
+    successMessage,
+    oldInput: undefined,
+    validationErrors: []
   });
 }
 
 export const postSignup = async (req, res, next) => {
   const { email, password } = req.body
-  // todo: validation
-  const hashedPsw = await bcrypt.hash(password, 12)
-  const user = await User.findOne({ email })
-  if (user) {
-    req.flash('error', 'Email alreaady exists, please choose another one')
-    return res.redirect('/signup')
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      errorMessage: errors.array().reduce((result, err, idx, arr) => {
+        if (idx === 0) result += 'Error with the following fields: '
+        result += `${err.param} (${err.msg})`
+        if (idx !== arr.length - 1) result += ', '
+        return result
+      }, ''),
+      successMessage: '',
+      oldInput: { email, password },
+      validationErrors: errors.array()
+    })
   }
+  const hashedPsw = await bcrypt.hash(password, 12)
   const newUser = new User({ email, password: hashedPsw, cart: { items: [] } })
   await newUser.save()
   res.redirect('/')
@@ -88,7 +135,7 @@ export const postSignup = async (req, res, next) => {
     })
 
   } catch (sendgridError) {
-    console.log({ sendgridError })
+    console.error({ sendgridError })
   }
 };
 

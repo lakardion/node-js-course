@@ -1,3 +1,4 @@
+import { validationResult } from 'express-validator';
 import { Product } from '../models/index.js'
 
 export const getAddProduct = (req, res, next) => {
@@ -5,8 +6,10 @@ export const getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
+    errorMessage: '',
+    successMessage: '',
+    oldData: undefined,
+    validationErrors: []
   });
 };
 
@@ -15,6 +18,25 @@ export const postAddProduct = async (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.render(
+      "admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      oldData: { title, imageUrl, price, description },
+      errorMessage: errors.array().reduce((result, err, idx, arr) => {
+        if (idx === 0) result += 'Error with the following fields: '
+        result += `${err.param} (${err.msg})`
+        if (idx !== arr.length - 1) result += ', '
+        return result
+      }, ''),
+      validationErrors: errors.array(),
+      successMessage: ''
+    }
+    )
+  }
   const product = new Product({
     title,
     price,
@@ -42,8 +64,10 @@ export const getEditProduct = async (req, res, next) => {
     path: "/admin/edit-product",
     editing: editMode,
     product,
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
+    errorMessage: undefined,
+    oldData: undefined,
+    validationErrors: [],
+    successMessage: ''
   });
 };
 
@@ -52,6 +76,26 @@ export const postEditProduct = async (req, res, next) => {
   const product = await Product.findById(id);
   if (product.userId.toString() !== req.user._id.toString()) {
     return res.redirect('/')
+  }
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.render(
+      "admin/edit-product", {
+      pageTitle: "Edit Product",
+      path: "/admin/edit-product",
+      editing: true,
+      product,
+      oldData: { title, imageUrl, price, description },
+      errorMessage: errors.array().reduce((result, err, idx, arr) => {
+        if (idx === 0) result += 'Error with the following fields: '
+        result += `${err.param} (${err.msg})`
+        if (idx !== arr.length - 1) result += ', '
+        return result
+      }, ''),
+      validationErrors: errors.array(),
+      successMessage: ''
+    }
+    )
   }
   product.title = title;
   product.price = price;

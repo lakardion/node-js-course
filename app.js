@@ -1,4 +1,5 @@
-import dotenv from 'dotenv'
+// ? Even though dotenv was at the top of the file (import dotenv from 'dotenv'; dotenv.config()). The env file was loaded after my modules rather so I was getting undefined on my controllers where the env variables whee used
+import 'dotenv/config'
 import path from 'path'
 import express from 'express'
 import bodyParser from 'body-parser'
@@ -17,14 +18,13 @@ import { User } from './models/index.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config()
 const MongoDBStore = MongoDBStoreSession(session)
 
 const { MONGO_DB_URI } = process.env
 const log = (color, message) => {
   if (typeof (message) === 'function') throw new Error('functions are not supported as message')
   const parsedMessage = typeof (message) === 'object' ? JSON.stringify(message, undefined, 2) : message
-  return console.log(chalk[color](parsedMessage));
+  return console.debug(chalk[color](parsedMessage));
 }
 
 const store = new MongoDBStore({
