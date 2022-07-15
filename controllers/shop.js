@@ -2,6 +2,9 @@ import { createReadStream, createWriteStream, readFile } from "fs";
 import path from "path";
 import { Product, Order } from "../models/index.js";
 import PDFDocument from 'pdfkit'
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_KEY)
 
 const ITEMS_PER_PAGE = 2
 
@@ -26,8 +29,6 @@ export const getProduct = async (req, res, next) => {
     product,
     pageTitle: product.title,
     path: "/products",
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
   });
 };
 
@@ -69,7 +70,7 @@ export const postCartDeleteProduct = async (req, res, next) => {
   return res.redirect("/cart");
 };
 
-export const postOrder = async (req, res, next) => {
+export const getCheckoutSuccess = async (req, res, next) => {
   const products = (await req.user.populate("cart.items.productId")).cart.items;
   const order = new Order({
     user: {
@@ -138,4 +139,32 @@ export const getInvoice = async (req, res, next) => {
   // })
   // const stream = createReadStream(invoicePath)
   // stream.pipe(res)
+}
+
+export const getCheckout = async (req, res, next) => {
+  const user = await req.user.populate("cart.items.productId");
+  const products = user.cart.items;
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: products.map(p => {
+      return {
+        name: p.productId.title,
+        description: p.productId.description,
+        amount: p.productId.price * 100,
+        currency: 'usd',
+        quantity: p.quantity
+      }
+    }),
+    success_url: `${req.protocol}://${req.get('host')}/checkout/success`,
+    cancel_url: `${req.protocol}://${req.get('host')}/checkout/cancel`
+  })
+  res.render("shop/checkout", {
+    pageTitle: 'Checkout',
+    path: "/checkout",
+    totalSum: user.cart.items.reduce((result, item) =>
+      result + +item.productId.price + +item.quantity
+      , 0),
+    products,
+    sessionId: session.id
+  });
 }

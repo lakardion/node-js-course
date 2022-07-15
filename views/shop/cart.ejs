@@ -23,13 +23,7 @@
                             <% }) %>
                     </ul>
                     <hr>
-                    <section class="centered" aria-label="check out section">
-                        <form action="/create-order" method="post">
-                            <input type="hidden" value="<%= csrfToken %>" name="_csrf" />
-                            <button class="btn" type="submit">Check out</button>
-                        </form>
-                    </section>
-
+                    <a class="btn" href="/checkout">Check out</a>
                     <% } else { %>
                         <h1>No Products in Cart!</h1>
                         <% } %>

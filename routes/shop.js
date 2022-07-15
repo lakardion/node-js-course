@@ -15,10 +15,11 @@ authedRouter.use(isAuth)
 authedRouter.get("/cart", shopController.getCart);
 authedRouter.post("/cart", shopController.postCart);
 authedRouter.post("/cart-delete-item", shopController.postCartDeleteProduct);
-authedRouter.post("/create-order", shopController.postOrder);
 authedRouter.get("/orders", shopController.getOrders);
 authedRouter.get("/orders/:orderId", shopController.getInvoice)
-
+authedRouter.get('/checkout', shopController.getCheckout)
+authedRouter.get('/checkout/success', shopController.getCheckoutSuccess)
+authedRouter.get('/checkout/cancel', shopController.getCheckout)
 // router.get('/checkout', shopController.getCheckout);
 
 export { unauthedRouter as shopUnauthedRouter, authedRouter as shopAuthedRouter }
