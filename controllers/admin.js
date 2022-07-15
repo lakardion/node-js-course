@@ -157,13 +157,18 @@ export const getProducts = async (req, res, next) => {
   });
 };
 
-export const postDeleteProduct = async (req, res, next) => {
-  const prodId = req.body.productId;
-  const product = await Product.findOne({ _id: prodId, userId: req.user._id })
-  if (!product) {
-    return next()
+export const deleteProduct = async (req, res, next) => {
+  const { productId } = req.params;
+  try {
+    if (!productId) return res.status(400).json({ message: 'No id was passed' })
+    const product = await Product.findOne({ _id: productId, userId: req.user._id })
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' })
+    }
+    deleteFile(product.imageUrl)
+    await product.delete()
+    res.status(204).json()
+  } catch (deleteError) {
+    res.status(500).json({ message: 'Deleting product failed' })
   }
-  deleteFile(product.imageUrl)
-  await product.delete()
-  res.redirect("/admin/products");
 };
