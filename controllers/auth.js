@@ -125,7 +125,8 @@ export const postSignup = async (req, res, next) => {
   const hashedPsw = await bcrypt.hash(password, 12)
   const newUser = new User({ email, password: hashedPsw, cart: { items: [] } })
   await newUser.save()
-  res.redirect('/')
+  req.flash('success', 'We just sent an email, once you see it you can try loggin in !')
+  res.redirect('/login')
   try {
     return await transporter.sendMail({
       to: email,

@@ -1,4 +1,7 @@
+import { createReadStream, createWriteStream, readFile } from "fs";
+import path from "path";
 import { Product, Order } from "../models/index.js";
+import PDFDocument from 'pdfkit'
 
 export const getProducts = async (req, res, next) => {
   const products = await Product.find();
@@ -66,8 +69,7 @@ export const postOrder = async (req, res, next) => {
       userId: req.user._id,
     },
     products: products.map((i) => ({
-      // in here we could also do { ...i.product.id._doc } which is a special field that mongoose provides so that we can get all the metadata of the reference of that document. However in my case I chose to do a population sf that information whenever the order gets fetched
-      productData: i.productId,
+      productData: { ...i.productId._doc },
       quantity: i.quantity,
     })),
   });
@@ -79,18 +81,53 @@ export const postOrder = async (req, res, next) => {
 };
 
 export const getOrders = async (req, res, next) => {
-  const orders = await Order.find({ "user.userId": req.user._id }).populate({
-    path: "products",
-    populate: {
-      path: "productData",
-      model: "Product",
-    },
-  });
+  const orders = await Order.find({ "user.userId": req.user._id });
   res.render("shop/orders", {
     path: "/orders",
     pageTitle: "Your Orders",
     orders,
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
   });
 };
+
+export const getInvoice = async (req, res, next) => {
+  const { orderId } = req.params
+  const order = await Order.findById(orderId)
+  if (!order) {
+    return next(new Error('Order not found'))
+  }
+  if ((order.user.userId.toString()) !== req.user._id.toString()) {
+    return next(new Error('Unauthorized'))
+  }
+
+  const invoiceName = `invoice-${orderId}.pdf`
+  const invoicePath = path.join('data', 'invoices', invoiceName)
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `inline; filename="${invoiceName}"`)
+
+  const pdfDoc = new PDFDocument()
+  pdfDoc.pipe(createWriteStream(invoicePath))
+  pdfDoc.pipe(res)
+
+  pdfDoc.fontSize(25).text('Invoice', { underline: true })
+  pdfDoc.text('----------------------------------')
+  let totalPrice = 0
+  order.products.forEach(p => {
+    totalPrice += p.quantity * p.productData.price
+    pdfDoc.text(`${p.quantity}    ${p.productData.title}    ${p.productData.price}    $${p.productData.price * p.quantity}`)
+  })
+  pdfDoc.text('----------------------------------')
+  pdfDoc.text(`Total price: $ ${totalPrice}`)
+  pdfDoc.end()
+  // With local file
+  // readFile(invoicePath, (err, data) => {
+  //   if (err) {
+  //     console.error({ err })
+  //     return next(err)
+  //   }
+  //   res.setHeader('Content-Type', 'application/pdf')
+  //   res.setHeader('Content-Disposition', `inline; filename="${invoiceName}"`)
+  //   res.send(data)
+  // })
+  // const stream = createReadStream(invoicePath)
+  // stream.pipe(res)
+}

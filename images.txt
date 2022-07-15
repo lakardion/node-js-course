@@ -1,0 +1,13 @@
+images
+naruto
+https://i.pinimg.com/736x/be/cc/b9/beccb9e1fe96964811683272bebfcd82--naruto-bjd.jpg
+Moka
+https://d3ugyf2ht6aenh.cloudfront.net/stores/102/583/products/bialetti-cafetera-moka-express-6-italiana-tienda-pepino-11-96d010c5d3126929f215795545091213-1024-1024.jpg
+lanterns
+https://m.media-amazon.com/images/I/61Xjh94BQNL._AC_SL1001_.jpg
+desk
+https://http2.mlstatic.com/D_NQ_NP_867043-MLA48499114388_122021-O.webp
+chair
+https://m.media-amazon.com/images/I/81J5r9dANGL._SX342_.jpg
+book
+https://www.collinsdictionary.com/images/full/book_181404689_1000.jpg

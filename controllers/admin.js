@@ -1,5 +1,6 @@
 import { validationResult } from 'express-validator';
 import { Product } from '../models/index.js'
+import { deleteFile } from '../util/file.js';
 
 export const getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
@@ -15,17 +16,30 @@ export const getAddProduct = (req, res, next) => {
 
 export const postAddProduct = async (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  // multer in action
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
   const errors = validationResult(req)
+  if (!image) {
+    return res.status(422).render(
+      "admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      oldData: { title, price, description },
+      errorMessage: 'File upload is required to add a product. Only valid files are images (png,jpg, jpeg)',
+      validationErrors: [],
+      successMessage: ''
+    })
+  }
   if (!errors.isEmpty()) {
     return res.render(
       "admin/edit-product", {
       pageTitle: "Add Product",
       path: "/admin/add-product",
       editing: false,
-      oldData: { title, imageUrl, price, description },
+      oldData: { title, price, description },
       errorMessage: errors.array().reduce((result, err, idx, arr) => {
         if (idx === 0) result += 'Error with the following fields: '
         result += `${err.param} (${err.msg})`
@@ -37,6 +51,7 @@ export const postAddProduct = async (req, res, next) => {
     }
     )
   }
+  const imageUrl = image.path
   try {
     const product = new Product({
       title,
@@ -55,7 +70,7 @@ export const postAddProduct = async (req, res, next) => {
       pageTitle: "Add Product",
       path: "/admin/add-product",
       editing: false,
-      oldData: { title, imageUrl, price, description },
+      oldData: { title, price, description },
       errorMessage: 'Database operation failed. Please try again later',
       validationErrors: [],
       successMessage: ''
@@ -86,7 +101,7 @@ export const getEditProduct = async (req, res, next) => {
 };
 
 export const postEditProduct = async (req, res, next) => {
-  const { productId: id, title, price, imageUrl, description } = req.body;
+  const { productId: id, title, price, image, description } = req.body;
   const product = await Product.findById(id);
   if (product.userId.toString() !== req.user._id.toString()) {
     return res.redirect('/')
@@ -99,7 +114,7 @@ export const postEditProduct = async (req, res, next) => {
       path: "/admin/edit-product",
       editing: true,
       product,
-      oldData: { title, imageUrl, price, description },
+      oldData: { title, price, description },
       errorMessage: errors.array().reduce((result, err, idx, arr) => {
         if (idx === 0) result += 'Error with the following fields: '
         result += `${err.param} (${err.msg})`
@@ -113,7 +128,10 @@ export const postEditProduct = async (req, res, next) => {
   }
   product.title = title;
   product.price = price;
-  product.imageUrl = imageUrl;
+  if (image) {
+    deleteFile(product.imageUrl)
+    product.imageUrl = image.path
+  }
   product.description = description;
   await product.save();
   res.redirect("/admin/products");
@@ -136,6 +154,11 @@ export const getProducts = async (req, res, next) => {
 
 export const postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  await Product.deleteOne({ _id: prodId, userId: req.user._id });
+  const product = await Product.findOne({ _id: prodId, userId: req.user._id })
+  if (!product) {
+    return next()
+  }
+  deleteFile(product.imageUrl)
+  await product.delete()
   res.redirect("/admin/products");
 };

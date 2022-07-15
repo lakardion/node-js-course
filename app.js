@@ -14,7 +14,21 @@ import { fileURLToPath } from 'url'
 import { errorController } from './controllers/index.js'
 import { adminRouter, shopAuthedRouter, shopUnauthedRouter, authRouter } from './routes/index.js'
 import { User } from './models/index.js'
+import multer from 'multer'
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images')
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${new Date().toISOString()}-${file.originalname}`)
+  }
+})
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg')
+    cb(null, true)
+  else cb(null, false)
+}
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -40,8 +54,10 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 
 // ! super important the order of these 4 down here. csurf requires body parser to be able to get the _csrf value out of the hidden input, as well as the session set already so that it can use that as well..
+app.use(multer({ storage: fileStorage, fileFilter }).single('image'))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/images', express.static(path.join(__dirname, "images")));
 app.use(session({ secret: 'mysecret', resave: false, saveUninitialized: false, store }))
 app.use(csrfProtection)
 app.use(flash())
@@ -75,11 +91,13 @@ app.use(errorController.get404);
 app.get('/500', errorController.get500)
 
 app.use((error, req, res, next) => {
+  console.error(error)
   if (error) return res.redirect('/500')
   next()
 })
 
-  (async () => {
+
+  ; (async () => {
     try {
       await mongoose.connect(
         MONGO_DB_URI

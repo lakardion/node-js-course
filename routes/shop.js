@@ -17,6 +17,7 @@ authedRouter.post("/cart", shopController.postCart);
 authedRouter.post("/cart-delete-item", shopController.postCartDeleteProduct);
 authedRouter.post("/create-order", shopController.postOrder);
 authedRouter.get("/orders", shopController.getOrders);
+authedRouter.get("/orders/:orderId", shopController.getInvoice)
 
 // router.get('/checkout', shopController.getCheckout);
 

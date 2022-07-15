@@ -9,7 +9,8 @@
             <main>
                 <%- include('../includes/error-message.ejs') %>
                     <form class="product-form"
-                        action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>" method="POST">
+                        action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>" method="POST"
+                        enctype="multipart/form-data">
                         <input type="hidden" value="<%= csrfToken %>" name="_csrf" />
                         <div class="form-control">
                             <label for="title">Title</label>
@@ -17,12 +18,17 @@
                                 type="text" name="title" id="title"
                                 value="<% if (editing) { %><%= oldData?.title || product.title %><% } else { %> <%= oldData?.title ? oldData.title : '' %> <% } %>">
                         </div>
-                        <div class="form-control">
+                        <!-- <div class="form-control">
                             <label for="imageUrl">Image URL</label>
                             <input class="<%= validationErrors.find(e => e.param === 'imageUrl') ? 'invalid' : '' %>"
                                 type="text" name="imageUrl" id="imageUrl"
                                 value="<% if (editing) { %><%= oldData?.imageUrl || product.imageUrl %><% } else { %> <%= oldData?.imageUrl ? oldData.imageUrl : '' %> <% } %>">
+                        </div> -->
+                        <div class="form-control">
+                            <label for="imageUrl">Image URL</label>
+                            <input type="file" name="image" id="image">
                         </div>
+
                         <div class="form-control">
                             <label for="price">Price</label>
                             <input class="<%= validationErrors.find(e => e.param === 'price') ? 'invalid' : '' %>"
