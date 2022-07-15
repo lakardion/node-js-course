@@ -3,14 +3,19 @@ import path from "path";
 import { Product, Order } from "../models/index.js";
 import PDFDocument from 'pdfkit'
 
+const ITEMS_PER_PAGE = 2
+
 export const getProducts = async (req, res, next) => {
-  const products = await Product.find();
+  const { page } = req.query
+  const countDocuments = await Product.countDocuments()
+  const totalPages = Math.ceil(countDocuments / ITEMS_PER_PAGE)
+  const products = await Product.find().skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
   res.render("shop/product-list", {
     prods: products,
     pageTitle: "All Products",
     path: "/products",
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
+    totalPages,
+    currentPage: page ?? 1
   });
 };
 
@@ -27,13 +32,16 @@ export const getProduct = async (req, res, next) => {
 };
 
 export const getIndex = async (req, res, next) => {
-  const products = await Product.find();
+  const { page } = req.query
+  const countDocuments = await Product.countDocuments()
+  const totalPages = Math.ceil(countDocuments / ITEMS_PER_PAGE)
+  const products = await Product.find().skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
   res.render("shop/index", {
     prods: products,
     pageTitle: "Shop",
     path: "/",
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
+    totalPages,
+    currentPage: page ?? 1
   });
 };
 

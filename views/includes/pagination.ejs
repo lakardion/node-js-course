@@ -1,0 +1,11 @@
+<section class="pagination">
+  <a href="?page=1">
+    &lt;| </a>
+  <a href="?page=<%= currentPage-1 >= 1 ? currentPage-1 : '1' %>">
+    &lt; </a>
+  <a href="#">
+    <%= currentPage %>
+  </a>
+  <a href="?page=<%= currentPage+1 <= totalPages ? currentPage+1 : totalPages %>"> > </a>
+  <a href="?page=<%= totalPages %>"> |> </a>
+</section>

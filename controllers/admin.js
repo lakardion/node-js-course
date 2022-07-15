@@ -2,6 +2,8 @@ import { validationResult } from 'express-validator';
 import { Product } from '../models/index.js'
 import { deleteFile } from '../util/file.js';
 
+const ITEMS_PER_PAGE = 2
+
 export const getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
@@ -138,7 +140,10 @@ export const postEditProduct = async (req, res, next) => {
 };
 
 export const getProducts = async (req, res, next) => {
-  const products = await Product.find({ userId: req.user._id });
+  const { page } = req.query
+  const countDocuments = await Product.countDocuments({ userId: req.user._id })
+  const totalPages = Math.ceil(countDocuments / ITEMS_PER_PAGE)
+  const products = await Product.find({ userId: req.user._id }).skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
   // .select('title price -_id')
   // we could use select to only get certain data, this by specifying the fields space separated in a string
   // .populate('userId')
@@ -147,8 +152,8 @@ export const getProducts = async (req, res, next) => {
     prods: products,
     pageTitle: "Admin Products",
     path: "/admin/products",
-    isAuthenticated: req.session.isLoggedIn,
-    csrfToken: req.csrfToken()
+    totalPages
+    , currentPage: page ?? 1
   });
 };
 
