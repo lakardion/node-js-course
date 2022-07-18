@@ -1,0 +1,1 @@
+export const __baseUrl = process.env.NODE_ENV === 'production' ? 'https://lakardion-node.herokuapp.com' : `localhost:${process.env.PORT || 3000}`

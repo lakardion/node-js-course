@@ -5,3 +5,4 @@ images.txt
 data/invoices
 server.cert
 server.key
+access.log

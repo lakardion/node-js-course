@@ -5,6 +5,7 @@ import crypto from 'crypto'
 import { validationResult } from 'express-validator'
 
 import { User } from '../models/index.js'
+import { __baseUrl } from '../util/baseUrl.js'
 
 
 const transporter = nodemailer.createTransport(sendgridTransport({
@@ -184,7 +185,7 @@ export const postReset = (req, res, next) => {
         subject: 'Reset password',
         html: `
           <p> You requested a password reset </p>
-          <p> Click this <a href="${process.env.BASE_URL}/reset?token=${token}">link</a> to reset your password. Or ignore this email if this was not you </p>
+          <p> Click this <a href="${__baseUrl}/reset?token=${token}">link</a> to reset your password. Or ignore this email if this was not you </p>
         `
       })
 
