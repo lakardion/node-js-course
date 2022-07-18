@@ -4,6 +4,9 @@
   "description": "Complete Node.js Guide",
   "type": "module",
   "main": "app.js",
+  "engines": {
+    "node": "16.13.2"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "nodemon app.js",
