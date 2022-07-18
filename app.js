@@ -1,20 +1,24 @@
 // ? Even though dotenv was at the top of the file (import dotenv from 'dotenv'; dotenv.config()). The env file was loaded after my modules rather so I was getting undefined on my controllers where the env variables whee used
-import 'dotenv/config'
-import path from 'path'
-import express from 'express'
 import bodyParser from 'body-parser'
-import mongoose from 'mongoose'
-import session from 'express-session'
+import chalk from 'chalk'
+import flash from 'connect-flash'
 import MongoDBStoreSession from 'connect-mongodb-session'
 import csrf from 'csurf'
-import flash from 'connect-flash'
-import chalk from 'chalk'
+import 'dotenv/config'
+import express from 'express'
+import session from 'express-session'
+import mongoose from 'mongoose'
+import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { errorController } from './controllers/index.js'
-import { adminRouter, shopAuthedRouter, shopUnauthedRouter, authRouter } from './routes/index.js'
-import { User } from './models/index.js'
+import compression from 'compression'
+import { createWriteStream } from 'fs'
+import helmet from 'helmet'
+import morgan from 'morgan'
 import multer from 'multer'
+import { errorController } from './controllers/index.js'
+import { User } from './models/index.js'
+import { adminRouter, authRouter, shopAuthedRouter, shopUnauthedRouter } from './routes/index.js'
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -29,6 +33,11 @@ const fileFilter = (req, file, cb) => {
     cb(null, true)
   else cb(null, false)
 }
+
+//using SSL
+// const privateKey = readFileSync('server.key')
+// const certificate = readFileSync('server.cert')
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -47,7 +56,12 @@ const store = new MongoDBStore({
 })
 
 
+const accessLogStream = createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
+
 const app = express();
+app.use(helmet())
+app.use(compression())
+app.use(morgan('combined', { stream: accessLogStream }))
 const csrfProtection = csrf()
 
 app.set("view engine", "ejs");
@@ -105,8 +119,15 @@ app.use((error, req, res, next) => {
       log('green', 'DB connected')
       log('blue', 'Starting app...')
       // await (new User({ email: 'lakardion@test.com', username: 'Lakardion' }).save())
-      app.listen(process.env.PORT);
-      log('green', `App started in port ${process.env.PORT}`)
+      // using SSL
+      // https.createServer({
+      //   key: privateKey,
+      //   cert: certificate
+      // }, app)
+      //   .listen(process.env.PORT);
+      app.listen(process.env.PORT, () => {
+        log('green', `App started in port ${process.env.PORT}`)
+      });
     } catch (connectionError) {
       log('red', { connectionError })
     }
